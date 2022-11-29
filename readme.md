@@ -1,4 +1,4 @@
-# Práctico 10 - Electrónica II 2022 para ingeniería electrónica - Máquinas de estado finito
+# Práctico 10 - Electrónica II 2022 para ingeniería electrónica - Máquinas de estado finito.
 
 El objetivo de este práctico es desarrollar un receptor de control remoto infrarrojo con código NEC, incluyendo el desarrollo completo del proyecto de ghdl con testbench, Makefile para ejecutar banco de prueba y visualización con gtkwave.
 
