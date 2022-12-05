@@ -8,8 +8,8 @@ entity det_ir is
         infrarrojo: in std_logic;
         hab : in std_logic;
         valido : out std_logic;
-        dir : out std_logic_vector(7 downto 0)
-       -- cmd : out std_logic_vector(7 downto 0);
+        dir : out std_logic_vector(7 downto 0);
+        cmd : out std_logic_vector(7 downto 0)
     );
 end det_ir;
 
