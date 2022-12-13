@@ -16,54 +16,51 @@ entity det_tiempo is
 end det_tiempo;
 
 architecture solucion of det_tiempo is
-    signal cuenta, cuenta_sig : std_logic_vector(N-1 downto 0);
-    signal tiempoymed_sig, tiempoymed : std_logic_vector (N downto 0);
-    
-    subtype estado_t is std_logic_vector(0 downto 0);
-    signal estado, estado_sig : estado_t;
-    constant e_espera : estado_t := "0";
-    constant e_cuenta : estado_t := "1";
+    signal cuenta_act, cuenta_sig : std_logic_vector(N-1 downto 0);
+    signal tiempo_act, tiempo_sig : std_logic_vector (N-1 downto 0);
+    signal med_act, med_sig : std_logic_vector (0 downto 0);
 
+    subtype estados is std_logic_vector(0 downto 0);
+    signal estado_act, estado_sig : estados;
+    constant espera : estados := "0";
+    constant cuenta : estados := "1";
+    
 begin     
-    flipflopA : ffd
+    flipflop_estado: ffd
+    generic map(N => 1)
+    port map(rst => rst, hab => hab, clk => clk, D=> estado_sig, Q=>estado_act);
+
+    flipflop_cuentaInterna : ffd
     generic map (N => N)
-        port map(
-            rst => rst,
-            hab => hab,
-            clk => clk,
-            Q => cuenta,
-            D => cuenta_sig
-    );
+        port map(rst => rst, hab => hab, clk => clk, D => cuenta_sig, Q =>cuenta_act);
 
-    flipflop_sal : ffd
-    generic map (N => N+1 ) 
-        port map(
-            rst => rst,
-            hab => hab,
-            clk => clk,
-            Q   => tiempoymed,
-            D   => tiempoymed_sig
-    );
-    
-    tiempo <= tiempoymed (N-1 downto 0);
-    med <= tiempoymed (N);
+    flipflop_tiempo : ffd
+    generic map (N => N ) 
+        port map(rst => rst, hab => hab, clk => clk,D=>tiempo_sig, Q=>tiempo_act);
 
-    salida :  process (all)
+    flipflop_med : ffd
+    generic map (N => 1 ) 
+        port map(rst => rst, hab => hab, clk => clk, D=> med_sig,Q=> med_act);
+
+
+    salidas :  process (all)
     begin
-        case (estado) is
-        when e_espera =>
+        case (estado_act) is
+        when espera =>
             if pulso = '1' then
-                tiempoymed_sig <= tiempoymed;
+                tiempo_sig<= tiempo_act;
+                med_sig<=med_act;
             else
-                tiempoymed_sig(N-1 downto 0) <= tiempoymed(N-1 downto 0);
-                tiempoymed_sig(N) <= '0';
+                tiempo_sig <= tiempo_act;
+                med_sig(0)<='0';
             end if;
-        when others => -- e_cuenta
+        when others => 
             if pulso = '1' then
-                tiempoymed_sig(N-1 downto 0) <= cuenta;
-                tiempoymed_sig(N)  <= '1' ;
+                tiempo_sig<= cuenta_act;
+                med_sig (0)<= '1' ;
             else
-                tiempoymed_sig <= tiempoymed;
+                tiempo_sig <= tiempo_act;
+                med_sig<=med_act;
             end if;
         end case;
     end process;
@@ -71,50 +68,43 @@ begin
 
     contador :  process (all)
     begin
-        case (estado) is 
-        when e_cuenta =>
-            if pulso = '0' and (unsigned(cuenta) /= 0)  then
-                cuenta_sig <= std_logic_vector(unsigned (cuenta) + 1);
+        case (estado_act) is 
+        when cuenta =>
+            if pulso = '0' and (unsigned(cuenta_act) /= 0)  then
+                cuenta_sig <= std_logic_vector(unsigned (cuenta_act) + 1);
             else
-                cuenta_sig <= cuenta;
+                cuenta_sig <= cuenta_act;
             end if;
-        when others => -- e_espera
+        when others => 
             if pulso = '0' then 
                 cuenta_sig <= (0=>'1', others => '0');
             else 
-                cuenta_sig <= cuenta;
+                cuenta_sig <= cuenta_act;
             end if;
         end case;
     end process;
 
-    flipflop_estado: ffd
-        generic map(N => 1)
-        port map(
-            rst => rst,
-            hab => hab,
-            clk => clk,
-            Q   => estado,
-            D   => estado_sig
-    );
-
-    pr_estado : process (all)
+    process (all)
     begin
-        case( estado ) is
-        when e_espera =>
+        case(estado_act) is
+        when espera =>
             if pulso = '0' then
-                estado_sig <= e_cuenta;
+                estado_sig <=cuenta;
             else
-                estado_sig <= e_espera;
+                estado_sig <=espera;
             end if;
-        when e_cuenta =>
+        when cuenta =>
             if pulso = '0' then
-                estado_sig <= e_cuenta;
+                estado_sig <= cuenta;
             else
-                estado_sig <= e_espera;
+                estado_sig <= espera;
             end if;
-        when others   =>
-            estado_sig <= e_espera;
+        when others=>
+            estado_sig<= espera;
         end case ;
     end process;
+
+    tiempo <= tiempo_act;
+    med <=med_act(0);
 
 end solucion;
